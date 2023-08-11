@@ -9,6 +9,7 @@ const Home = () => {
   const [activeSongIndex, setActiveSongIndex] = useState(null);
   const [repeatMode, setRepeatMode] = useState(false);  
   const repeatModeRef = useRef(repeatMode);
+  const shuffleModeRef = useRef(shuffleMode);
   const [shuffleMode, setShuffleMode] = useState(false);
   const audioRef = useRef(null);
   const baseURL = "https://playground.4geeks.com/apis/fake/sound/";
@@ -26,7 +27,8 @@ const Home = () => {
 
   useEffect(() => {
     repeatModeRef.current = repeatMode;
-  }, [repeatMode]);
+    shuffleModeRef.current = shuffleMode;
+  }, [repeatMode, shuffleMode]);
 
   useEffect(() => {
     if (activeSongIndex !== null && isPlaying) {
@@ -108,12 +110,12 @@ const Home = () => {
   };
 
   const handleSongEnd = () => {
-    console.log(repeatMode)
-    console.log(shuffleMode)
-    if (repeatMode) {
+    console.log(repeatModeRef.current)
+    console.log(shuffleModeRef.current)
+    if (repeatModeRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.play();
-    } else if (shuffleMode) {
+    } else if (shuffleModeRef.current) {
       selectRandomSong();
       audioRef.current.play();
     } else {
@@ -123,7 +125,7 @@ const Home = () => {
 
   const handleShuffleMode = () => {
     setShuffleMode((prevShuffleMode) => !prevShuffleMode);
-    if (!shuffleMode) setRepeatMode(false); // Desactivar repeat si se activa shuffle
+    if (!shuffleMode) setRepeatMode(false); 
   };
   
   const selectRandomSong = () => {
