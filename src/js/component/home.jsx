@@ -16,8 +16,29 @@ const Home = () => {
   const [currTime, setCurrTime] = useState({
     min: "",
     sec: "",
-  }); // current position of the audio in minutes and seconds
+  });
+  const [duration, setDuration] = useState(0);
+
   const [seconds, setSeconds] = useState(0);
+
+  const getSongsData = async () => {
+    try {
+      const res = await fetch(
+        "https://playground.4geeks.com/apis/fake/sound/songs"
+      );
+      if (!res.ok) {
+        throw new Error(`Error al obtener datos: ${res.status}`);
+      }
+      const data = await res.json();
+      setSongs(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    getSongsData();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -33,17 +54,6 @@ const Home = () => {
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
-  
-  const getSongsData = () => {
-    fetch("https://playground.4geeks.com/apis/fake/sound/songs")
-      .then((res) => res.json())
-      .then((data) => setSongs(data))
-      .catch((error) => console.log(error));
-  };
-
-  useEffect(() => {
-    getSongsData();
   }, []);
 
   useEffect(() => {
@@ -63,6 +73,26 @@ const Home = () => {
     };
   }, [activeSongIndex, isPlaying, songs]);
 
+  useEffect(() => {
+    const setAudioDuration = () => {
+      if (audioRef.current) {
+        setDuration(audioRef.current.duration);
+      }
+    };
+    if (audioRef.current) {
+      audioRef.current.addEventListener("loadedmetadata", setAudioDuration);
+    }
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.removeEventListener(
+          "loadedmetadata",
+          setAudioDuration
+        );
+      }
+    };
+  }, [activeSongIndex]);
+
+  //SE REINICIA EN VEZ DE REPRODUCIRSE CUANDO SE LE DAY PLAY DESPUES DE PAUSADO, CREO QUE ES PORQUE EL SRC SE REINICIA EN ALGUN LADO CUANDO NO DEBERIA, PERO YA ESTOY CANSADO Y NO SE DONDE ES :(
   const handlePlayClick = () => {
     if (activeSongIndex !== null) {
       if (isPlaying) {
@@ -95,7 +125,7 @@ const Home = () => {
     } else if (activeSongIndex > 0) {
       setActiveSongIndex(activeSongIndex - 1);
     } else if (activeSongIndex === 0) {
-      setActiveSongIndex(songs.length - 1); // Vuelve a la última canción
+      setActiveSongIndex(songs.length - 1);
     }
   };
 
@@ -180,7 +210,9 @@ const Home = () => {
         shuffleState={shuffleMode}
         repeatState={repeatMode}
         audioRef={audioRef}
-        seconds= {seconds}
+        seconds={seconds}
+        currTime={currTime}
+        duration={duration}
       />
       <audio ref={audioRef} src={baseURL + songs[activeSongIndex]?.url} />
     </div>
