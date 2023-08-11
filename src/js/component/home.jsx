@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
+import SongList from "./songList";
+import PlayerControls from "./playerControls";
 import "../../styles/index.css";
 
 const Home = () => {
   const [songs, setSongs] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeSongIndex, setActiveSongIndex] = useState(null);
+  const [repeatMode, setRepeatMode] = useState(false);  
+  const repeatModeRef = useRef(repeatMode);
+  const [shuffleMode, setShuffleMode] = useState(false);
   const audioRef = useRef(null);
   const baseURL = "https://playground.4geeks.com/apis/fake/sound/";
 
-  // Obtiene las canciones de la API
   const getSongsData = () => {
     fetch("https://playground.4geeks.com/apis/fake/sound/songs")
       .then((res) => res.json())
@@ -16,7 +20,26 @@ const Home = () => {
       .catch((error) => console.log(error));
   };
 
-  // Maneja la reproducción/pausa de la canción
+  useEffect(() => {
+    getSongsData();
+  }, []);
+
+  useEffect(() => {
+    repeatModeRef.current = repeatMode;
+  }, [repeatMode]);
+
+  useEffect(() => {
+    if (activeSongIndex !== null && isPlaying) {
+      audioRef.current.src = baseURL + songs[activeSongIndex]?.url;
+      audioRef.current.play();
+    }
+    const audioElement = audioRef.current;
+    audioElement.addEventListener("ended", handleSongEnd);        
+    return () => {
+      audioElement.removeEventListener("ended", handleSongEnd);
+    };
+  }, [activeSongIndex, isPlaying, songs]);
+
   const handlePlayClick = () => {
     if (activeSongIndex !== null) {
       if (isPlaying) {
@@ -26,27 +49,29 @@ const Home = () => {
       }
     } else {
       setActiveSongIndex(0);
-      audioRef.current.src = baseURL + songs[setActiveSongIndex]?.url;
+      audioRef.current.src = baseURL + songs[activeSongIndex]?.url;
       audioRef.current.play();
     }
     setIsPlaying(!isPlaying);
   };
 
-  // Avanza a la siguiente canción en la lista
   const handleNextClick = () => {
-    if (activeSongIndex < songs.length - 1) {
+    if (shuffleMode) {
+      selectRandomSong();
+    } else if (activeSongIndex < songs.length - 1) {
       setActiveSongIndex(activeSongIndex + 1);
     }
+    if (isPlaying) audioRef.current.play();
   };
 
-  // Retrocede a la canción anterior en la lista
   const handlePrevClick = () => {
-    if (activeSongIndex > 0) {
+    if (shuffleMode) {
+      selectRandomSong();
+    } else if (activeSongIndex > 0) {
       setActiveSongIndex(activeSongIndex - 1);
     }
   };
 
-  // Maneja el clic en una canción de la lista
   const handleSongClick = (index) => {
     if (activeSongIndex === index) {
       if (isPlaying) {
@@ -65,56 +90,69 @@ const Home = () => {
     }
   };
 
-  useEffect(() => {
-    getSongsData();
-  }, []);
-
-  useEffect(() => {
-    if (activeSongIndex !== null && isPlaying) {
-      audioRef.current.src = baseURL + songs[activeSongIndex]?.url;
-      audioRef.current.play();
+  const increaseVolume = () => {
+    if (audioRef.current.volume < 1) {
+      audioRef.current.volume = Math.min(audioRef.current.volume + 0.1, 1);
     }
-  }, [activeSongIndex, isPlaying, songs]);
+  };
+  
+  const decreaseVolume = () => {
+    if (audioRef.current.volume > 0) {
+      audioRef.current.volume = Math.max(audioRef.current.volume - 0.1, 0);
+    }
+  };
+
+  const handleRepeatMode = () => {
+    setRepeatMode(!repeatMode); 
+    if (!repeatMode) setShuffleMode(false);
+  };
+
+  const handleSongEnd = () => {
+    console.log(repeatMode)
+    console.log(shuffleMode)
+    if (repeatMode) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play();
+    } else if (shuffleMode) {
+      selectRandomSong();
+      audioRef.current.play();
+    } else {
+      handleNextClick();
+    }
+  };
+
+  const handleShuffleMode = () => {
+    setShuffleMode((prevShuffleMode) => !prevShuffleMode);
+    if (!shuffleMode) setRepeatMode(false); // Desactivar repeat si se activa shuffle
+  };
+  
+  const selectRandomSong = () => {
+    const randomIndex = Math.floor(Math.random() * songs.length);
+    setActiveSongIndex(randomIndex);
+  };
 
   return (
     <div className="d-flex flex-column vh-100">
       <div className="bg-secondary p-1"></div>
       <div className="flex-grow-1 bg-dark">
-        <ul className="list-group list-group-flush text-light">
-          {songs &&
-            songs.map((song, index) => (
-              <button
-                className={`list-group-item list-group-item-action bg-dark text-light d-flex justify-content-between hover-effect ${
-                  activeSongIndex === index ? "active-song" : ""
-                }`}
-                key={song.id}
-                onClick={() => handleSongClick(index)}
-              >
-                <span>{song.id}</span>
-                <span className="mx-auto">{song.name}</span>
-              </button>
-            ))}
-        </ul>
-      </div>
-      <div className="bg-secondary fixed-bottom w-100 p-3 d-flex justify-content-center align-items-center">
-        <i
-          className="fa-solid fa-square-caret-left"
-          style={{ color: "#ffffff", fontSize: "40px", marginRight: "50px" }}
-          onClick={handlePrevClick}
-        />
-        <i
-          className={
-            isPlaying ? "fa-solid fa-pause mx-5" : "fa-solid fa-play mx-5"
-          }
-          style={{ color: "#ffffff", fontSize: "40px" }}
-          onClick={handlePlayClick}
-        />
-        <i
-          className="fa-solid fa-square-caret-right"
-          style={{ color: "#ffffff", fontSize: "40px", marginLeft: "50px" }}
-          onClick={handleNextClick}
+        <SongList
+          songs={songs}
+          activeSongIndex={activeSongIndex}
+          onSongClick={handleSongClick}
         />
       </div>
+      <PlayerControls
+        isPlaying={isPlaying}
+        onNextClick={handleNextClick}
+        onPrevClick={handlePrevClick}
+        onPlayClick={handlePlayClick}
+        increaseVolume={increaseVolume}
+        decreaseVolume={decreaseVolume}
+        repeatMode={handleRepeatMode}
+        shuffleMode={handleShuffleMode}
+        shuffleState={shuffleMode}
+        repeatState={repeatMode}
+      />
       <audio ref={audioRef} src={baseURL + songs[activeSongIndex]?.url} />
     </div>
   );

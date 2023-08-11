@@ -16,5 +16,15 @@
 }
 
 .fa-solid {
+  cursor: pointer;
   transition: transform 0.2s, opacity 0.2s; 
+}
+
+.repeat-mode-button {
+  color: #ffffff;
+  font-size: 40px;
+}
+
+.repeat-mode-active {
+  text-shadow: 0 0 10px #ffffff; /* Sombra blanca alrededor del texto */
 }
