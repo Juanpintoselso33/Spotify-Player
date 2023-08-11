@@ -7,13 +7,34 @@ const Home = () => {
   const [songs, setSongs] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeSongIndex, setActiveSongIndex] = useState(null);
-  const [repeatMode, setRepeatMode] = useState(false);  
+  const [repeatMode, setRepeatMode] = useState(false);
   const repeatModeRef = useRef(repeatMode);
   const shuffleModeRef = useRef(shuffleMode);
   const [shuffleMode, setShuffleMode] = useState(false);
   const audioRef = useRef(null);
   const baseURL = "https://playground.4geeks.com/apis/fake/sound/";
+  const [currTime, setCurrTime] = useState({
+    min: "",
+    sec: "",
+  }); // current position of the audio in minutes and seconds
+  const [seconds, setSeconds] = useState(0);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (audioRef.current) {
+        const currentTimeInSeconds = audioRef.current.currentTime;
+        setSeconds(currentTimeInSeconds);
+        const min = Math.floor(currentTimeInSeconds / 60);
+        const sec = Math.floor(currentTimeInSeconds % 60);
+        setCurrTime({
+          min,
+          sec,
+        });
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+  
   const getSongsData = () => {
     fetch("https://playground.4geeks.com/apis/fake/sound/songs")
       .then((res) => res.json())
@@ -36,7 +57,7 @@ const Home = () => {
       audioRef.current.play();
     }
     const audioElement = audioRef.current;
-    audioElement.addEventListener("ended", handleSongEnd);        
+    audioElement.addEventListener("ended", handleSongEnd);
     return () => {
       audioElement.removeEventListener("ended", handleSongEnd);
     };
@@ -62,6 +83,8 @@ const Home = () => {
       selectRandomSong();
     } else if (activeSongIndex < songs.length - 1) {
       setActiveSongIndex(activeSongIndex + 1);
+    } else if (activeSongIndex === songs.length - 1) {
+      setActiveSongIndex(0);
     }
     if (isPlaying) audioRef.current.play();
   };
@@ -71,6 +94,8 @@ const Home = () => {
       selectRandomSong();
     } else if (activeSongIndex > 0) {
       setActiveSongIndex(activeSongIndex - 1);
+    } else if (activeSongIndex === 0) {
+      setActiveSongIndex(songs.length - 1); // Vuelve a la última canción
     }
   };
 
@@ -97,7 +122,7 @@ const Home = () => {
       audioRef.current.volume = Math.min(audioRef.current.volume + 0.1, 1);
     }
   };
-  
+
   const decreaseVolume = () => {
     if (audioRef.current.volume > 0) {
       audioRef.current.volume = Math.max(audioRef.current.volume - 0.1, 0);
@@ -105,13 +130,13 @@ const Home = () => {
   };
 
   const handleRepeatMode = () => {
-    setRepeatMode(!repeatMode); 
+    setRepeatMode(!repeatMode);
     if (!repeatMode) setShuffleMode(false);
   };
 
   const handleSongEnd = () => {
-    console.log(repeatModeRef.current)
-    console.log(shuffleModeRef.current)
+    console.log(repeatModeRef.current);
+    console.log(shuffleModeRef.current);
     if (repeatModeRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.play();
@@ -125,9 +150,9 @@ const Home = () => {
 
   const handleShuffleMode = () => {
     setShuffleMode((prevShuffleMode) => !prevShuffleMode);
-    if (!shuffleMode) setRepeatMode(false); 
+    if (!shuffleMode) setRepeatMode(false);
   };
-  
+
   const selectRandomSong = () => {
     const randomIndex = Math.floor(Math.random() * songs.length);
     setActiveSongIndex(randomIndex);
@@ -154,6 +179,8 @@ const Home = () => {
         shuffleMode={handleShuffleMode}
         shuffleState={shuffleMode}
         repeatState={repeatMode}
+        audioRef={audioRef}
+        seconds= {seconds}
       />
       <audio ref={audioRef} src={baseURL + songs[activeSongIndex]?.url} />
     </div>
