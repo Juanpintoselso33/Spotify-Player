@@ -18,7 +18,6 @@ const Home = () => {
     sec: "",
   });
   const [duration, setDuration] = useState(0);
-
   const [seconds, setSeconds] = useState(0);
 
   const getSongsData = async () => {
@@ -92,7 +91,7 @@ const Home = () => {
     };
   }, [activeSongIndex]);
 
-    
+  //INCORPORE ESTA FUNCION PARA PROBAR EL TRY CATCH PARA VER SI PODIA SOLUCIONAR EL ERROR DE LA CONSOLA CUANDO PLAY SE SUPERPONE CON OTRO PLAY, NO LO HIZO PERO CREO QUE CON ESTO QUEDO MAS RAPIDO
   const customPlay = (element) => {
     try {
       const playPromise = element.play();
@@ -109,7 +108,7 @@ const Home = () => {
     }
   };
 
-  //SE REINICIA EN VEZ DE REPRODUCIRSE CUANDO SE LE DAY PLAY DESPUES DE PAUSADO, CREO QUE ES PORQUE EL SRC SE REINICIA EN ALGUN LADO CUANDO NO DEBERIA, PERO YA ESTOY CANSADO Y NO SE DONDE ES :(
+  //SE REINICIA EN VEZ DE REPRODUCIRSE CUANDO SE LE DA PLAY DESPUES DE PAUSADO, CREO QUE ES PORQUE EL SRC SE REINICIA EN ALGUN LADO CUANDO NO DEBERIA, PERO YA ESTOY CANSADO Y NO SE DONDE ES :(
   const handlePlayClick = () => {
     if (activeSongIndex !== null) {
       if (isPlaying) {
