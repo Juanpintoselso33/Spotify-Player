@@ -64,7 +64,7 @@ const Home = () => {
   useEffect(() => {
     if (activeSongIndex !== null && isPlaying) {
       audioRef.current.src = baseURL + songs[activeSongIndex]?.url;
-      audioRef.current.play();
+      customPlay(audioRef.current);
     }
     const audioElement = audioRef.current;
     audioElement.addEventListener("ended", handleSongEnd);
@@ -92,18 +92,35 @@ const Home = () => {
     };
   }, [activeSongIndex]);
 
+    
+  const customPlay = (element) => {
+    try {
+      const playPromise = element.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+          })
+          .catch((error) => {            
+            console.error("Error al reproducir:", error);
+          });
+      }
+    } catch (error) {
+      console.error("Error al intentar reproducir:", error);
+    }
+  };
+
   //SE REINICIA EN VEZ DE REPRODUCIRSE CUANDO SE LE DAY PLAY DESPUES DE PAUSADO, CREO QUE ES PORQUE EL SRC SE REINICIA EN ALGUN LADO CUANDO NO DEBERIA, PERO YA ESTOY CANSADO Y NO SE DONDE ES :(
   const handlePlayClick = () => {
     if (activeSongIndex !== null) {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play();
+        customPlay(audioRef.current);
       }
     } else {
       setActiveSongIndex(0);
       audioRef.current.src = baseURL + songs[activeSongIndex]?.url;
-      audioRef.current.play();
+      customPlay(audioRef.current);
     }
     setIsPlaying(!isPlaying);
   };
@@ -116,7 +133,7 @@ const Home = () => {
     } else if (activeSongIndex === songs.length - 1) {
       setActiveSongIndex(0);
     }
-    if (isPlaying) audioRef.current.play();
+    if (isPlaying) customPlay(audioRef.current);
   };
 
   const handlePrevClick = () => {
@@ -135,14 +152,14 @@ const Home = () => {
         audioRef.current.pause();
         setIsPlaying(false);
       } else {
-        audioRef.current.play();
+        customPlay(audioRef.current);
         setIsPlaying(true);
       }
     } else {
       setActiveSongIndex(index);
       if (isPlaying) {
         audioRef.current.src = baseURL + songs[index]?.url;
-        audioRef.current.play();
+        customPlay(audioRef.current);
       }
     }
   };
@@ -169,10 +186,10 @@ const Home = () => {
     console.log(shuffleModeRef.current);
     if (repeatModeRef.current) {
       audioRef.current.currentTime = 0;
-      audioRef.current.play();
+      customPlay(audioRef.current);
     } else if (shuffleModeRef.current) {
       selectRandomSong();
-      audioRef.current.play();
+      customPlay(audioRef.current);
     } else {
       handleNextClick();
     }
